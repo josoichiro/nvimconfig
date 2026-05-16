@@ -3,13 +3,18 @@
 return {
   {
     "neovim/nvim-lspconfig",
-        event = { "BufReadPre", "BufNewFile" },
-    config = function()
-      -- 共通 LSP 設定があればここに書く
+    lazy = true,
+    event = { "BufReadPre", "BufNewFile" },
 
-      -- 環境固有 LSP 設定を読み込む
-      -- 存在しない環境では何もしない
-      pcall(require, "config.local_lsp")
+    -- ここが重要:
+    -- plugin 本体は lazy のままでも、init は起動時に実行される
+    init = function()
+      local ok, err = pcall(require, "config.local_lsp")
+      if not ok then
+        vim.schedule(function()
+          vim.notify("Failed to load config.local_lsp: " .. err, vim.log.levels.ERROR)
+        end)
+      end
     end,
   },
 
