@@ -18,6 +18,14 @@ map("n", "<A-.>", "<cmd>BufferMoveNext<cr>", { desc = "Move buffer right" })
 map("n", "<leader>sv", "<cmd>vsplit<cr>", { desc = "Vertical split" })
 map("n", "<leader>sh", "<cmd>split<cr>", { desc = "Horizontal split" })
 
+-- Image Preview
+map("n", "<leader>ip", function()
+	require("utils.image-preview").preview_in_wezterm(vim.fn.expand("%:p"))
+end, { desc = "Preview image in WezTerm" })
+map("n", "<leader>iP", function()
+	require("utils.image-preview").close_preview_pane()
+end, { desc = "Close image preview pane" })
+
 -- window移動
 map("n", "<C-h>", "<C-w>h", { desc = "Move to left window" })
 map("n", "<C-l>", "<C-w>l", { desc = "Move to right window" })
