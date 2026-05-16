@@ -93,7 +93,8 @@ return {
 						show_server_tools_in_chat = true,
 						show_result_in_chat = true,
 
-						make_vars = true,
+						-- make_vars = true,
+						make_vars = false,
 						make_slash_commands = true,
 					},
 				},
@@ -129,7 +130,11 @@ return {
 	},
 
 	{
+		--		"MeanderingProgrammer/render-markdown.nvim",
+		--		ft = { "markdown", "codecompanion" },
+	},
+	{
 		"MeanderingProgrammer/render-markdown.nvim",
-		ft = { "markdown", "codecompanion" },
+		enabled = false,
 	},
 }
