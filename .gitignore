@@ -1,1 +1,2 @@
 ./lua/plugins/local_lsp.lua
+lua/config/local_lsp.lua
