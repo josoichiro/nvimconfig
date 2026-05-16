@@ -3,6 +3,14 @@
 return {
   {
     "neovim/nvim-lspconfig",
+        event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      -- 共通 LSP 設定があればここに書く
+
+      -- 環境固有 LSP 設定を読み込む
+      -- 存在しない環境では何もしない
+      pcall(require, "config.local_lsp")
+    end,
   },
 
   {
@@ -37,8 +45,6 @@ return {
         },
 
         -- 必要になったら :Mason でインストールする
-        fortls = {},   -- Fortran
-        julials = {},  -- Julia
         clangd = {},   -- C / C++
         pyright = {},  -- Python
       }
@@ -62,8 +68,6 @@ return {
         -- Masonでインストール済みなら自動で有効化する候補
         automatic_enable = {
           "lua_ls",
-          "fortls",
-          "julials",
           "clangd",
           "pyright",
         },
