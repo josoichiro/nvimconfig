@@ -61,7 +61,7 @@ return {
 						return
 					end
 
-					require("utils.image_preview").preview_in_wezterm(node.path)
+					require("utils.image-preview").preview_in_wezterm(node.path)
 				end,
 			},
 
@@ -95,4 +95,3 @@ return {
 		},
 	},
 }
-
