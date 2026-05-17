@@ -30,6 +30,7 @@ require("lazy").setup({
 		{ import = "plugins.colorscheme" },
 		{ import = "plugins.ui" },
 		{ import = "plugins.editor" },
+    { import = "plugins.image" },
 		{ import = "plugins.treesitter" },
 		{ import = "plugins.lsp" },
 		{ import = "plugins.completion" },
