@@ -51,7 +51,6 @@ return {
 
         -- 必要になったら :Mason でインストールする
         clangd = {},   -- C / C++
-        pyright = {},  -- Python
       }
 
       for server, config in pairs(servers) do
@@ -74,7 +73,6 @@ return {
         automatic_enable = {
           "lua_ls",
           "clangd",
-          "pyright",
         },
       })
     end,
