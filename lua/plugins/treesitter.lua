@@ -1,74 +1,107 @@
 -- ~/.config/nvim/lua/plugins/treesitter.lua
 
-local ai_chat_filetypes = {
-  "codecompanion",
-  "Avante",
-  "copilot-chat",
-  "CopilotChat",
-  "chatgpt",
-  "neoai",
+local parsers = {
+  "lua",
+  "vim",
+  "vimdoc",
+  "bash",
+  "python",
+  "julia",
+  "c",
+  "cpp",
+  "fortran",
+  "html",
+  "css",
+  "json",
+  "markdown",
+  "markdown_inline",
+  "yaml",
+}
+
+-- vim.treesitter.start() を実行する FileType。
+-- parser 名と filetype 名が違うものがあるので、parsers とは分ける。
+local start_filetypes = {
+  "lua",
+  "vim",
+  "vimdoc",
+  "help",
+  "bash",
+  "sh",
+  "python",
+  "julia",
+  "c",
+  "cpp",
+  "fortran",
+  "html",
+  "css",
+  "json",
+  "markdown",
+  "yaml",
+}
+
+-- Codex / CopilotChat などの対話バッファでは Treesitter を起動しない。
+local treesitter_disabled_filetypes = {
+  codex = true,
+  ["copilot-chat"] = true,
+  CopilotChat = true,
+}
+
+-- 旧設定と同じく、markdown / yaml は Treesitter indent を使わない。
+local indent_disabled_filetypes = {
+  markdown = true,
+  yaml = true,
 }
 
 return {
   {
     "nvim-treesitter/nvim-treesitter",
-    branch = "master",
+    branch = "main",
     lazy = false,
     build = ":TSUpdate",
     config = function()
-      require("nvim-treesitter.configs").setup({
-        ensure_installed = {
-          "lua",
-          "vim",
-          "vimdoc",
-          "bash",
-          "python",
-          "julia",
-          "c",
-          "cpp",
-          "fortran",
-          "html",
-          "css",
-          "json",
-          "markdown",
-          "markdown_inline",
-          "yaml",
-        },
+      local ts = require("nvim-treesitter")
 
-        highlight = {
-          enable = true,
+      ts.setup({
+        -- デフォルトでも stdpath("data") .. "/site" だが、明示しておく
+        -- ことで main ブランチの想定設定に寄せる。
+        install_dir = vim.fn.stdpath("data") .. "/site",
+      })
 
-          -- AI chat 系バッファでは Treesitter highlight を無効化する
-          -- 今回の languagetree.lua / highlighter.lua エラー回避用
-          disable = function(lang, buf)
-            local ft = vim.bo[buf].filetype
-            local bt = vim.bo[buf].buftype
+      -- parser 名と Neovim の filetype 名が違うものを明示的に対応づける。
+      vim.treesitter.language.register("vimdoc", { "help", "vimdoc" })
+      vim.treesitter.language.register("bash", { "sh", "bash" })
 
-            if vim.tbl_contains(ai_chat_filetypes, ft) then
-              return true
-            end
+      -- 旧 ensure_installed 相当。
+      -- 既に入っている parser については no-op。
+      ts.install(parsers)
 
-            -- AI chat プラグインによっては ft=markdown の nofile バッファになることがある
-            if bt == "nofile" and (lang == "markdown" or lang == "markdown_inline") then
-              return true
-            end
+      vim.api.nvim_create_autocmd("FileType", {
+        group = vim.api.nvim_create_augroup("user-treesitter-main", { clear = true }),
+        pattern = start_filetypes,
+        callback = function(args)
+          local buf = args.buf
+          local ft = vim.bo[buf].filetype
+          local bt = vim.bo[buf].buftype
 
-            return false
-          end,
+          if treesitter_disabled_filetypes[ft] then
+            return
+          end
 
-          additional_vim_regex_highlighting = false,
-        },
+          -- CopilotChat などが markdown filetype の nofile バッファを作る場合の保険。
+          -- 通常ファイルの markdown は対象外。
+          if bt == "nofile" and ft == "markdown" then
+            return
+          end
 
-        indent = {
-          enable = true,
+          local ok = pcall(vim.treesitter.start, buf)
+          if not ok then
+            return
+          end
 
-          -- markdown / yaml は Treesitter indent が荒れやすいので無効化推奨
-          disable = {
-            "markdown",
-            "markdown_inline",
-            "yaml",
-          },
-        },
+          if not indent_disabled_filetypes[ft] then
+            vim.bo[buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+          end
+        end,
       })
     end,
   },
