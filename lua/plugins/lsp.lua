@@ -1,21 +1,56 @@
 -- ~/.config/nvim/lua/plugins/lsp.lua
 
+local function load_local_lsp()
+  local ok, local_lsp = pcall(require, "config.local_lsp")
+
+  if ok and type(local_lsp) == "table" then
+    return local_lsp
+  end
+
+  vim.schedule(function()
+    vim.notify("Failed to load config.local_lsp", vim.log.levels.WARN)
+  end)
+
+  return {
+    ensure_installed = {},
+    servers = {},
+  }
+end
+
+local function setup_and_enable_servers(servers, capabilities)
+  if vim.islist(servers) then
+    for _, server in ipairs(servers) do
+      vim.lsp.config(server, {
+        capabilities = capabilities,
+      })
+      vim.lsp.enable(server)
+    end
+    return
+  end
+
+  for server, spec in pairs(servers or {}) do
+    if spec == true then
+      vim.lsp.config(server, {
+        capabilities = capabilities,
+      })
+      vim.lsp.enable(server)
+    elseif type(spec) == "table" then
+      if spec.enabled ~= false then
+        local config = vim.tbl_deep_extend("force", spec.config or {}, {
+          capabilities = capabilities,
+        })
+
+        vim.lsp.config(server, config)
+        vim.lsp.enable(server)
+      end
+    end
+  end
+end
+
 return {
   {
     "neovim/nvim-lspconfig",
-    lazy = true,
     event = { "BufReadPre", "BufNewFile" },
-
-    -- ここが重要:
-    -- plugin 本体は lazy のままでも、init は起動時に実行される
-    init = function()
-      local ok, err = pcall(require, "config.local_lsp")
-      if not ok then
-        vim.schedule(function()
-          vim.notify("Failed to load config.local_lsp: " .. err, vim.log.levels.ERROR)
-        end)
-      end
-    end,
   },
 
   {
@@ -32,47 +67,26 @@ return {
     },
     config = function()
       local capabilities = require("blink.cmp").get_lsp_capabilities()
-
-      -- 設定だけ書いておく。
-      -- 実際に起動するのは Mason でインストール済みのものだけ。
-      local servers = {
-        lua_ls = {
-          settings = {
-            Lua = {
-              diagnostics = {
-                globals = { "vim" },
-              },
-              workspace = {
-                checkThirdParty = false,
-              },
-            },
-          },
-        },
-
-        -- 必要になったら :Mason でインストールする
-        clangd = {},   -- C / C++
-      }
-
-      for server, config in pairs(servers) do
-        config.capabilities = capabilities
-
-        if vim.lsp.config then
-          vim.lsp.config(server, config)
-        else
-          require("lspconfig")[server].setup(config)
-        end
-      end
+      local local_lsp = load_local_lsp()
 
       require("mason-lspconfig").setup({
-        -- 自動インストールはLuaだけ
-        ensure_installed = {
-          "lua_ls",
-        },
+        ensure_installed = local_lsp.ensure_installed or {},
+        automatic_enable = false,
+      })
 
-        -- Masonでインストール済みなら自動で有効化する候補
-        automatic_enable = {
-          "lua_ls",
-          "clangd",
+      setup_and_enable_servers(local_lsp.servers, capabilities)
+
+      vim.lsp.config("lua_ls", {
+        capabilities = capabilities,
+        settings = {
+          Lua = {
+            diagnostics = {
+              globals = { "vim" },
+            },
+            workspace = {
+              checkThirdParty = false,
+            },
+          },
         },
       })
     end,
